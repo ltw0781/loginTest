@@ -21,7 +21,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/public/**").permitAll()
                 .requestMatchers("/private/**").authenticated()
+                .requestMatchers("/api/auth/**").permitAll()    // 인증 필요
                 .anyRequest().denyAll());
+                
         return http.build();
     }
 

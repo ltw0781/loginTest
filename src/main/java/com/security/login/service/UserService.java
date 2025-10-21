@@ -1,10 +1,10 @@
 package com.security.login.service;
 
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.security.login.dto.UserRequestDTO;
+import com.security.login.entity.User;
 import com.security.login.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
