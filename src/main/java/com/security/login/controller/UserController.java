@@ -11,7 +11,9 @@ import com.security.login.dto.LoginRequestDTO;
 import com.security.login.dto.LoginResponseDTO;
 import com.security.login.dto.UserRequestDTO;
 import com.security.login.entity.User;
+import com.security.login.repository.UserRepository;
 import com.security.login.service.UserService;
+import com.security.login.util.JwtTokenProvider;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,6 +24,8 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 
     private final UserService userService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
     @PostMapping("/signup")
     public String signup(@RequestBody UserRequestDTO userRequestDTO) {
@@ -38,14 +42,14 @@ public class UserController {
     }
 
     @PostMapping("/refresh")
-    public LoginRequestDTO refresh(@RequestHeader("Authorization") String refreshToken) {
+    public LoginResponseDTO refresh(@RequestHeader("Authorization") String refreshToken) {
         String token = refreshToken.replace("Bearer ", "");
 
         if(!jwtTokenProvider.validateToken(token)) {
             throw new RuntimeException("유효하지 않은 토큰입니다.");
         }
 
-        String username = jwtTokenProvider.getUsernameFromToken(token);
+        String username = jwtTokenProvider.getUsernameFormToken(token);
         User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
         if(!token.equals(user.getRefreshToken())) {
@@ -58,10 +62,21 @@ public class UserController {
         user.setRefreshToken(newRefreshToken);
         userRepository.save(user);
 
-        return ResponseEntity.ok(new LoginResponseDTO(newAccessToken, newRefreshToken)).getBody;
+        return ResponseEntity.ok(new LoginResponseDTO(newAccessToken, newRefreshToken)).getBody();
     }
     
     @PostMapping("/logout")
-    pu
+    public String logout(@RequestHeader("Authorization") String accessToken) {
+
+        String token = accessToken.replace("Bearer ", "");
+        String username = jwtTokenProvider.getUsernameFormToken(token);
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("사용자가 존재하지 않습니다."));
+
+        user.setRefreshToken(null);
+        userRepository.save(user);
+
+
+        return "로그아웃 성공";
+    }
     
 }
