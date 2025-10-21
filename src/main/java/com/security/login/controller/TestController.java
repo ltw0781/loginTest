@@ -7,12 +7,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class TestController {
     
-    @GetMapping("/public/hello")
+    @GetMapping("/api/public/hello")
     public String publicHello() {
         return"public Hello World";
     }
     
-    @GetMapping("/private/hello")
+    @GetMapping("/api/private/hello")
     public String privateHello() {
         return"private Hello World";
     }

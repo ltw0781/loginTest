@@ -1,5 +1,6 @@
 package com.security.login.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,5 +22,7 @@ public class User {
     private String password;
     private String role;
     private String username;
+    @Column(length = 500)
+    private String refreshToken;
     
 }

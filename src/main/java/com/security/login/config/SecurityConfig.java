@@ -19,9 +19,9 @@ public class SecurityConfig {
             .formLogin(AbstractHttpConfigurer::disable)                         // 로그인 페이지 비활성화
             .httpBasic(Customizer.withDefaults())                               // HTTP Basic 인증 커스텀 설정
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/public/**").permitAll()
-                .requestMatchers("/private/**").authenticated()
-                .requestMatchers("/api/auth/**").permitAll()    // 인증 필요
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/private/**").authenticated()
+                .requestMatchers("/api/auth/**").permitAll()        // 인증 필요
                 .anyRequest().denyAll());
                 
         return http.build();
