@@ -45,7 +45,7 @@ public class UserController {
     //     return userService.login(loginRequestDTO);
     // }
 
-    @PostMapping
+    @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody LoginRequestDTO request, HttpServletResponse response) {
         LoginResponseDTO tokens = userService.login(request);
 
