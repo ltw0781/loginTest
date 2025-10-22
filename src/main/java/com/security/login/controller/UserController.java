@@ -1,5 +1,6 @@
 package com.security.login.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,6 +16,9 @@ import com.security.login.repository.UserRepository;
 import com.security.login.service.UserService;
 import com.security.login.util.JwtTokenProvider;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 
@@ -36,47 +40,72 @@ public class UserController {
         return "회원가입 성공";
     }
 
-    @PostMapping("/login")
-    public LoginResponseDTO login(@RequestBody LoginRequestDTO loginRequestDTO) {
-        return userService.login(loginRequestDTO);
+    // @PostMapping("/login")
+    // public LoginResponseDTO login(@RequestBody LoginRequestDTO loginRequestDTO) {
+    //     return userService.login(loginRequestDTO);
+    // }
+
+    @PostMapping
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody LoginRequestDTO request, HttpServletResponse response) {
+        LoginResponseDTO tokens = userService.login(request);
+
+        Cookie refreshCookie = new Cookie("refreshToken", tokens.getRefreshToken());
+        refreshCookie.setPath("/");
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setMaxAge(7*24*60*60); // 7 days
+        response.addCookie(refreshCookie);
+
+        return ResponseEntity.ok(new LoginResponseDTO(tokens.getAccessToken(), null));
     }
 
     @PostMapping("/refresh")
-    public LoginResponseDTO refresh(@RequestHeader("Authorization") String refreshToken) {
-        String token = refreshToken.replace("Bearer ", "");
+    public ResponseEntity<?> refresh(HttpServletRequest request) {
 
-        if(!jwtTokenProvider.validateToken(token)) {
-            throw new RuntimeException("유효하지 않은 토큰입니다.");
+        String refreshToken = null;
+        if(request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if(cookie.getName().equals("refreshToken")){
+                    refreshToken = cookie.getValue();
+                }
+            }
         }
 
-        String username = jwtTokenProvider.getUsernameFormToken(token);
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        if(refreshToken == null || !jwtTokenProvider.validateToken(refreshToken) ) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 리프레시 토큰 입니다.");
+        }
 
-        if(!token.equals(user.getRefreshToken())) {
-            throw new RuntimeException("토큰이 일치하지 않습니다.");
+        String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("사용자가 존재하지 않습니다."));
+
+        if(!refreshToken.equals(user.getRefreshToken())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("서버에 저장된 리프레시 토큰과 다릅니다.");
         }
 
         String newAccessToken = jwtTokenProvider.generateAccessToken(username);
-        String newRefreshToken = jwtTokenProvider.generateRefreshToken(username);
 
-        user.setRefreshToken(newRefreshToken);
-        userRepository.save(user);
+        return ResponseEntity.ok(new LoginResponseDTO(newAccessToken, null));
 
-        return ResponseEntity.ok(new LoginResponseDTO(newAccessToken, newRefreshToken)).getBody();
+
     }
     
     @PostMapping("/logout")
-    public String logout(@RequestHeader("Authorization") String accessToken) {
+    public ResponseEntity<String> logout(@RequestHeader("Authorization") String accessToken, HttpServletResponse response) {
 
         String token = accessToken.replace("Bearer ", "");
-        String username = jwtTokenProvider.getUsernameFormToken(token);
+        String username = jwtTokenProvider.getUsernameFromToken(token);
         User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("사용자가 존재하지 않습니다."));
 
         user.setRefreshToken(null);
         userRepository.save(user);
 
+        Cookie refreshCookie = new Cookie("refreshToken", null);
+        refreshCookie.setPath("/");
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setMaxAge(0); // 쿠키 삭제
+        response.addCookie(refreshCookie);
 
-        return "로그아웃 성공";
+
+        return ResponseEntity.ok("로그아웃 성공");
     }
     
 }
