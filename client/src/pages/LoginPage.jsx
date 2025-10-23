@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';
 
 function LoginPage() {
 
@@ -17,7 +18,10 @@ function LoginPage() {
             const res = await axios.post('http://localhost:8080/api/auth/login',{username, password}
                 ,{withCredentials:true}
             );
-            alert("로그인 성공! Access Token : " + res.data.accessToken);
+
+            Cookies.set('accessToken',res.data.accessToken);
+
+            alert("로그인 성공! Access Token : " + res.data.accessToken, { expires: 0.021,path: '/' });
             navigate('/');
         } catch (err) {
             alert("로그인 실패 : " + (err.response?.data || err.message));
