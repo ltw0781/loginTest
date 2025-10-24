@@ -39,7 +39,7 @@ public class UserService {
             throw new RuntimeException("잘못된 비밀번호입니다.");
         }
 
-        String assessToken = jwtTokenProvider.generateAccessToken(user.getUsername());
+        String assessToken = jwtTokenProvider.generateAccessToken(user.getUsername(),user.getRole());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
 
         user.setRefreshToken(refreshToken);

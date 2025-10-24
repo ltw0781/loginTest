@@ -1,10 +1,15 @@
 // import axios from 'axios';
 import axios from 'axios';
 import { useState } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import { setUserFromToken } from '../store/usersSlice';
+import { useDispatch } from 'react-redux';
 
 function LoginPage() {
+
+    const dispatch = useDispatch();
 
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -19,7 +24,9 @@ function LoginPage() {
                 ,{withCredentials:true}
             );
 
+            console.log(jwtDecode(res.data.accessToken));
             Cookies.set('accessToken',res.data.accessToken);
+            dispatch(setUserFromToken(res.data.accessToken));
 
             alert("로그인 성공! Access Token : " + res.data.accessToken, { expires: 0.021,path: '/' });
             navigate('/');
